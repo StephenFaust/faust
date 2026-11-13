@@ -1,0 +1,92 @@
+#-------------------------------------------------------
+# Faust Agent Center - 全局配置
+#
+# 所有敏感信息均通过环境变量注入，本地开发可参考 .env.example。
+# 切勿把真实的数据库密码、对象存储密钥提交进仓库。
+#-------------------------------------------------------
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: faust-agent-center
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  # 模型配置由数据库驱动（agent_model_config 表），不启用 Spring AI 的自动装配
+  autoconfigure:
+    exclude: org.springframework.ai.model.openai.autoconfigure.OpenAiChatAutoConfiguration,org.springframework.ai.model.openai.autoconfigure.OpenAiAudioSpeechAutoConfiguration,org.springframework.ai.model.openai.autoconfigure.OpenAiAudioTranscriptionAutoConfiguration,org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConfiguration,org.springframework.ai.model.openai.autoconfigure.OpenAiImageAutoConfiguration,org.springframework.ai.model.openai.autoconfigure.OpenAiModerationAutoConfiguration
+  # 业务上限 200MB，此处略放宽以便超限文件由 FileService 返回统一业务错误码
+  servlet:
+    multipart:
+      max-file-size: 210MB
+      max-request-size: 210MB
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      url: ${MYSQL_URL:jdbc:mysql://localhost:3306/faust?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowMultiQueries=true}
+      username: ${MYSQL_USERNAME:root}
+      password: ${MYSQL_PASSWORD:123456}
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      initial-size: 1
+      min-idle: 2
+      max-active: 5
+      max-wait: 60000
+      validation-query: SELECT 1
+      validation-query-timeout: 3000
+      test-on-borrow: false
+      test-on-return: false
+      test-while-idle: true
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      filters: stat,wall
+      web-stat-filter:
+        enabled: true
+        url-pattern: /api/*
+        exclusions: /druid/*
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+        login-username: ${DRUID_USERNAME:druid}
+        login-password: ${DRUID_PASSWORD:druid}
+  # Agent 会话检查点持久化
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+      database: ${REDIS_DATABASE:0}
+      timeout: 5000ms
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.faust.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  global-config:
+    db-config:
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+agent:
+  center:
+    # 对象存储（S3 协议兼容：MinIO / 阿里云 OSS / 腾讯云 COS）
+    file:
+      bucket: ${S3_BUCKET:community-service-exporter}
+      ak: ${S3_ACCESS_KEY:EC1D9ABSPKC39QOWFZHS}
+      sk: ${S3_SECRET_KEY:4sb1710eic36KfHCAjSi8Loo7vatjIzuMuwM8ofI}
+      url: ${S3_ENDPOINT:http://test-storage.lianjia.com}
+      out_url: ${S3_PUBLIC_ENDPOINT:http://test-storage.lianjia.com}
+      signing-region: ${S3_SIGNING_REGION:cn-north-1}
+      expire-min: ${S3_PRESIGN_EXPIRE_MINUTES:1440}
+    # 数据源连接密码加解密密钥（AES-256 派生），生产环境务必通过环境变量注入
+    encrypt:
+      secret: ${AGENT_PASSWORD_SECRET:please-change-me-in-production}
+    # 写路径分布式锁：仅在本地无 Redis 调试时允许关闭，生产必须为 true
+    lock:
+      enabled: ${AGENT_LOCK_ENABLED:true}
+
+logging:
+  level:
+    root: INFO
+    com.faust: INFO

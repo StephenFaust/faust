@@ -1,0 +1,683 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================================================
+   Faust Design Tokens — "Aurora Obsidian"
+   冷调中性 + 电光靛蓝主色 + 青绿辅助 + 玫瑰三级强调
+   ========================================================================= */
+@layer base {
+  :root {
+    --background: 240 30% 98.6%;
+    --foreground: 240 22% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 22% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 22% 11%;
+
+    /* 电光靛蓝：品牌主色。L 压到 57% 让白字在按钮上达到 AA 对比度 */
+    --primary: 244 82% 57%;
+    --primary-foreground: 0 0% 100%;
+    --primary-soft: 244 100% 96%;
+
+    --secondary: 240 22% 96%;
+    --secondary-foreground: 240 18% 24%;
+
+    --muted: 240 22% 96.5%;
+    --muted-foreground: 240 8% 46%;
+
+    /* 青绿：次级动作 / 标签 */
+    --accent: 178 62% 95%;
+    --accent-foreground: 178 64% 27%;
+
+    /* 玫瑰：三级强调 */
+    --tertiary: 347 92% 66%;
+    --tertiary-foreground: 347 72% 42%;
+
+    --destructive: 352 78% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 158 62% 38%;
+    --warning: 32 90% 46%;
+    --info: 212 88% 52%;
+
+    --border: 240 20% 91%;
+    --hairline: 240 22% 94%;
+    --input: 240 18% 88%;
+    --ring: 244 82% 57%;
+
+    /* 侧边栏：跟随主题。深色下是深空底，浅色下是近白面板 */
+    --sidebar: 0 0% 100%;
+    --sidebar-foreground: 240 22% 12%;
+    --sidebar-muted: 240 8% 45%;
+    --sidebar-accent: 244 78% 96.5%;
+    --sidebar-hover: 240 26% 96.5%;
+    --sidebar-border: 240 20% 91.5%;
+
+    /* 极光强度：浅色下压到很淡，避免白底上出现大片紫雾 */
+    --aurora-opacity: 0.34;
+    --glow-alpha: 0.03;
+
+    /* 品牌渐变字色（浅色 → 深靛蓝系） */
+    --brand-1: 244 78% 46%;
+    --brand-2: 258 72% 54%;
+    --brand-3: 178 58% 36%;
+
+    --radius: 14px;
+
+    /* 动效曲线 */
+    --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .dark {
+    --background: 245 24% 7%;
+    --foreground: 240 16% 93%;
+
+    --card: 245 20% 10%;
+    --card-foreground: 240 16% 93%;
+
+    --popover: 245 22% 11%;
+    --popover-foreground: 240 16% 93%;
+
+    --primary: 244 92% 70%;
+    --primary-foreground: 245 40% 8%;
+    --primary-soft: 244 34% 20%;
+
+    --secondary: 245 18% 15%;
+    --secondary-foreground: 240 14% 88%;
+
+    --muted: 245 18% 15%;
+    --muted-foreground: 240 9% 62%;
+
+    --accent: 178 38% 17%;
+    --accent-foreground: 178 62% 82%;
+
+    --tertiary: 347 88% 70%;
+    --tertiary-foreground: 347 90% 88%;
+
+    --destructive: 352 68% 58%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 158 58% 50%;
+    --warning: 32 84% 58%;
+    --info: 212 84% 66%;
+
+    --border: 245 16% 19%;
+    --hairline: 245 16% 16.5%;
+    --input: 245 16% 22%;
+    --ring: 244 92% 70%;
+
+    /* 深色侧边栏：沉入背景的空间锚点 */
+    --sidebar: 245 32% 6.5%;
+    --sidebar-foreground: 240 18% 93%;
+    --sidebar-muted: 240 10% 56%;
+    --sidebar-accent: 245 24% 13%;
+    --sidebar-hover: 245 22% 12.5%;
+    --sidebar-border: 245 16% 18%;
+
+    --aurora-opacity: 1;
+    --glow-alpha: 0.085;
+
+    /* 品牌渐变字色（深色 → 白到浅靛/青） */
+    --brand-1: 0 0% 100%;
+    --brand-2: 244 100% 86%;
+    --brand-3: 178 82% 78%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* 数字统一等宽，避免跳动 */
+  .font-display,
+  .tabular,
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.2);
+    color: hsl(var(--foreground));
+  }
+
+  :focus-visible {
+    outline: none;
+  }
+
+  ::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.24);
+    border-radius: 999px;
+    border: 2.5px solid transparent;
+    background-clip: content-box;
+    transition: background 0.2s;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.42);
+    background-clip: content-box;
+  }
+}
+
+/* =========================================================================
+   材质层 —— 极光 / 噪声 / 网格 / 聚光 / 玻璃 / 渐变描边
+   ========================================================================= */
+@layer components {
+  /* 极光光斑：侧边栏与品牌区专用，只动 transform，走 GPU 合成 */
+  @keyframes aurora-drift {
+    0% {
+      transform: translate3d(-3%, -2%, 0) scale(1);
+    }
+    50% {
+      transform: translate3d(3%, 2%, 0) scale(1.09);
+    }
+    100% {
+      transform: translate3d(-2%, 3%, 0) scale(1.02);
+    }
+  }
+
+  /* 品牌辉光：顶部光场，强度随主题变化（浅色下很淡） */
+  .brand-glow {
+    background: hsl(var(--primary) / var(--glow-alpha, 0.085));
+  }
+
+  .aurora::before {
+    content: '';
+    position: absolute;
+    inset: -35%;
+    pointer-events: none;
+    background:
+      radial-gradient(38% 30% at 24% 12%, hsl(var(--primary) / 0.55), transparent 72%),
+      radial-gradient(34% 26% at 86% 32%, hsl(178 74% 50% / 0.26), transparent 72%),
+      radial-gradient(46% 34% at 58% 94%, hsl(347 92% 66% / 0.2), transparent 72%);
+    filter: blur(34px) saturate(1.15);
+    opacity: var(--aurora-opacity, 1);
+    animation: aurora-drift 28s ease-in-out infinite alternate;
+    will-change: transform;
+  }
+
+  /* 胶片噪声：给平色加一层颗粒，避免"塑料感" */
+  .grain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    opacity: 0.03;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* 网格底纹：顶部渐隐，制造纵深 */
+  .grid-field {
+    background-image:
+      linear-gradient(to right, hsl(var(--border) / 0.65) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.65) 1px, transparent 1px);
+    background-size: 32px 32px;
+    -webkit-mask-image: radial-gradient(ellipse 75% 62% at 50% 0%, #000 8%, transparent 72%);
+    mask-image: radial-gradient(ellipse 75% 62% at 50% 0%, #000 8%, transparent 72%);
+  }
+
+  /* 光标跟随聚光：--mx / --my 由 SpotlightCard 写入 */
+  .spotlight {
+    position: relative;
+    isolation: isolate;
+  }
+  .spotlight::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s var(--ease-expo);
+    background: radial-gradient(
+      360px circle at var(--mx, 50%) var(--my, 0%),
+      hsl(var(--primary) / 0.09),
+      transparent 68%
+    );
+  }
+  .spotlight:hover::before {
+    opacity: 1;
+  }
+
+  /* 1px 渐变描边：hover 时点亮边缘，比改 border-color 细腻得多 */
+  .ring-gradient {
+    position: relative;
+  }
+  .ring-gradient::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s var(--ease-expo);
+    background: linear-gradient(
+      145deg,
+      hsl(var(--primary) / 0.55),
+      hsl(178 74% 50% / 0.32) 44%,
+      transparent 70%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+  }
+  .ring-gradient:hover::after,
+  .ring-gradient[data-active='true']::after {
+    opacity: 1;
+  }
+
+  /* 主按钮高光扫过 */
+  .btn-sheen {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .btn-sheen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      105deg,
+      transparent 32%,
+      hsl(0 0% 100% / 0.34) 48%,
+      transparent 64%
+    );
+    transform: translateX(-135%);
+    transition: transform 0.78s var(--ease-expo);
+  }
+  .btn-sheen:hover::after {
+    transform: translateX(135%);
+  }
+
+  /* 玻璃面板 */
+  .glass {
+    background: hsl(var(--card) / 0.72);
+    backdrop-filter: blur(18px) saturate(1.7);
+    -webkit-backdrop-filter: blur(18px) saturate(1.7);
+  }
+  .glass-dark {
+    background: hsl(var(--sidebar) / 0.55);
+    backdrop-filter: blur(18px) saturate(1.5);
+    -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  }
+
+  /* 品牌渐变字：深浅两套，浅色下用深靛蓝保证可读 */
+  .text-brand {
+    background: linear-gradient(
+      118deg,
+      hsl(var(--brand-1)) 0%,
+      hsl(var(--brand-2)) 48%,
+      hsl(var(--brand-3)) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* 骨架屏：扫光比 pulse 更"高级" */
+  .skeleton-sheen {
+    position: relative;
+    overflow: hidden;
+    background: hsl(var(--muted));
+  }
+  .skeleton-sheen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--foreground) / 0.05),
+      transparent
+    );
+    animation: shimmer 1.9s infinite;
+  }
+
+  /* 弹层进出场：轻微缩放 + 位移，比单纯淡入更有"实体感" */
+  @keyframes dialog-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -47%) scale(0.965);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+  /* 关闭：往回缩一点再淡出，收得比入场快，避免拖沓 */
+  @keyframes dialog-out {
+    from {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translate(-50%, -48.5%) scale(0.97);
+    }
+  }
+  @keyframes overlay-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes overlay-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+  /*
+   * data-state 由 Radix 写在节点上；Presence 会检测关闭态的 animation，
+   * 等动画播完再卸载节点，所以关闭动效才能被看到。
+   */
+  .overlay-fade[data-state='open'] {
+    animation: overlay-in 0.26s var(--ease-expo);
+  }
+  .overlay-fade[data-state='closed'] {
+    animation: overlay-out 0.18s ease-in forwards;
+  }
+  .dialog-surface[data-state='open'] {
+    animation: dialog-in 0.32s var(--ease-expo);
+  }
+  .dialog-surface[data-state='closed'] {
+    animation: dialog-out 0.2s ease-in forwards;
+  }
+
+  /* 顶栏/工具栏的柔和分隔 */
+  .separator-soft {
+    background: linear-gradient(
+      to right,
+      transparent,
+      hsl(var(--border)) 12%,
+      hsl(var(--border)) 88%,
+      transparent
+    );
+    height: 1px;
+  }
+}
+
+@layer utilities {
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* 交错入场的延迟容器 */
+  .stagger > * {
+    animation: rise 0.52s var(--ease-expo) backwards;
+  }
+  .stagger > *:nth-child(1) {
+    animation-delay: 0.02s;
+  }
+  .stagger > *:nth-child(2) {
+    animation-delay: 0.06s;
+  }
+  .stagger > *:nth-child(3) {
+    animation-delay: 0.1s;
+  }
+  .stagger > *:nth-child(4) {
+    animation-delay: 0.14s;
+  }
+  .stagger > *:nth-child(5) {
+    animation-delay: 0.18s;
+  }
+  .stagger > *:nth-child(6) {
+    animation-delay: 0.22s;
+  }
+  .stagger > *:nth-child(7) {
+    animation-delay: 0.26s;
+  }
+  .stagger > *:nth-child(8) {
+    animation-delay: 0.3s;
+  }
+  .stagger > *:nth-child(n + 9) {
+    animation-delay: 0.34s;
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 12px, 0) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  /* 演示用：无动画偏好时全部静止 */
+  @media (prefers-reduced-motion: reduce) {
+    .aurora::before,
+    .stagger > *,
+    .btn-sheen::after,
+    .skeleton-sheen::after,
+    .overlay-fade,
+    .dialog-surface {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+}
+
+/* ===== Markdown 渲染（对话气泡 / Agent 详情 / Skill 预览共用） ===== */
+.markdown-body {
+  font-size: 14px;
+  line-height: 1.75;
+  color: hsl(var(--foreground));
+  word-break: break-word;
+  white-space: normal;
+}
+
+.markdown-body > *:first-child {
+  margin-top: 0;
+}
+.markdown-body > *:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin: 20px 0 8px;
+  font-family: 'Space Grotesk', 'SF Pro Display', -apple-system, 'PingFang SC', sans-serif;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.018em;
+}
+.markdown-body h1 {
+  font-size: 22px;
+}
+.markdown-body h2 {
+  font-size: 18.5px;
+}
+.markdown-body h3 {
+  font-size: 16px;
+}
+.markdown-body h4 {
+  font-size: 14.5px;
+}
+
+.markdown-body p {
+  margin: 7px 0;
+}
+.markdown-body ul {
+  margin: 8px 0;
+  padding-left: 22px;
+  list-style: disc;
+}
+.markdown-body ol {
+  margin: 8px 0;
+  padding-left: 24px;
+  list-style: decimal;
+}
+.markdown-body li {
+  margin: 4px 0;
+}
+.markdown-body li::marker {
+  color: hsl(var(--primary) / 0.55);
+}
+
+.markdown-body code {
+  background: hsl(var(--primary) / 0.07);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', SFMono-Regular, ui-monospace, Consolas, monospace;
+  font-size: 12.5px;
+  color: hsl(347 72% 46%);
+}
+
+.dark .markdown-body code {
+  background: hsl(var(--primary) / 0.14);
+  color: hsl(347 92% 74%);
+}
+
+.markdown-body pre {
+  background: linear-gradient(165deg, #10101c 0%, #0a0a14 100%);
+  color: #dfe2f0;
+  padding: 15px 17px;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 12px 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border: 1px solid hsl(244 40% 30% / 0.35);
+  box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.05);
+}
+
+.markdown-body pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.markdown-body a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: opacity 0.15s;
+}
+.markdown-body a:hover {
+  opacity: 0.78;
+}
+
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid hsl(var(--border));
+  margin: 20px 0;
+}
+
+.markdown-body strong {
+  font-weight: 650;
+}
+
+.markdown-body blockquote {
+  margin: 12px 0;
+  padding: 4px 0 4px 14px;
+  border-left: 2px solid hsl(var(--primary) / 0.4);
+  color: hsl(var(--muted-foreground));
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 12px 0;
+  font-size: 13.5px;
+  table-layout: fixed;
+  word-break: break-word;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid hsl(var(--border));
+  padding: 8px 11px;
+  text-align: left;
+  vertical-align: top;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+.markdown-body thead th {
+  background: hsl(var(--muted) / 0.85);
+  font-weight: 600;
+  font-size: 12.5px;
+  color: hsl(var(--muted-foreground));
+  letter-spacing: 0.01em;
+}
+.markdown-body tbody tr:nth-child(even) {
+  background: hsl(var(--muted) / 0.4);
+}
+
+/* 详情页窄容器内表格：列宽按内容自适应 + 横向滚动兜底 */
+.agent-md-view {
+  overflow-x: auto;
+}
+.agent-md-view .markdown-body table {
+  table-layout: auto;
+  width: max-content;
+  min-width: 100%;
+}
+
+/* ===== Toast（sonner） =====
+   sonner 把 --normal-bg / --normal-text 写死在 [data-theme='light'|'dark'] 上，
+   而 Toaster 不传 theme 时永远按 light 渲染（文字 var(--gray12) 近黑），
+   深色主题下就成了「深底黑字」几乎看不见。
+   这里用应用 token 接管：底色/描边/文字与 Dialog 保持一致（bg-card + border/80）。 */
+:root [data-sonner-toaster][data-theme] {
+  --normal-bg: hsl(var(--card));
+  --normal-bg-hover: hsl(var(--card));
+  --normal-border: hsl(var(--border) / 0.8);
+  --normal-border-hover: hsl(var(--border));
+  --normal-text: hsl(var(--card-foreground));
+}

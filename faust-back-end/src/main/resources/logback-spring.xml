@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <property name="LOG_FILE_MAX_HISTORY" value="7"/>
+    <property name="FILE_MAX_SIZE" value="300MB"/>
+    <property name="LOG_TOTAL_FILE_SIZE" value="2GB"/>
+    <property name="LOG_PATH" value="${LOG_PATH:-${LOG_TEMP:-${java.io.tmpdir:-/tmp}}/}"/>
+    <property name="FILE_LOG_PATTERN"
+              value="%d{yyyy/MM/dd-HH:mm:ss:SSS} [%X{chatId}] [%thread] %-5level %logger{36} - %msg%n"/>
+
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <logger name="druid" level="DEBUG"/>
+    <logger name="executableSql" level="DEBUG"/>
+    <logger name="com.alibaba.druid.filter.stat" level="INFO"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <springProfile name="test,prod,local">
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/app.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/app-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+                <maxFileSize>${FILE_MAX_SIZE}</maxFileSize>
+                <totalSizeCap>${LOG_TOTAL_FILE_SIZE}</totalSizeCap>
+                <maxHistory>${LOG_FILE_MAX_HISTORY}</maxHistory>
+            </rollingPolicy>
+            <encoder>
+                <pattern>${FILE_LOG_PATTERN}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+        <appender name="SQL_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/sql.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/sql-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+                <maxFileSize>${FILE_MAX_SIZE}</maxFileSize>
+                <totalSizeCap>${LOG_TOTAL_FILE_SIZE}</totalSizeCap>
+                <maxHistory>${LOG_FILE_MAX_HISTORY}</maxHistory>
+            </rollingPolicy>
+            <encoder>
+                <pattern>${FILE_LOG_PATTERN}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+        <appender name="SLOW_SQL_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/sql-slow.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/sql-slow-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+                <maxFileSize>${FILE_MAX_SIZE}</maxFileSize>
+                <totalSizeCap>${LOG_TOTAL_FILE_SIZE}</totalSizeCap>
+                <maxHistory>${LOG_FILE_MAX_HISTORY}</maxHistory>
+            </rollingPolicy>
+            <encoder>
+                <pattern>${FILE_LOG_PATTERN}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+
+        <!-- 异步输出，避免日志写入阻塞业务线程 -->
+        <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+            <neverBlock>true</neverBlock>
+            <discardingThreshold>0</discardingThreshold>
+            <queueSize>1024</queueSize>
+            <appender-ref ref="FILE"/>
+        </appender>
+
+        <logger name="druid" level="DEBUG" additivity="false">
+            <appender-ref ref="SQL_FILE"/>
+        </logger>
+        <logger name="executableSql" level="DEBUG" additivity="false">
+            <appender-ref ref="SQL_FILE"/>
+        </logger>
+        <logger name="com.alibaba.druid.filter.stat" level="INFO" additivity="false">
+            <appender-ref ref="SLOW_SQL_FILE"/>
+        </logger>
+
+        <root level="INFO">
+            <appender-ref ref="ASYNC_FILE"/>
+        </root>
+    </springProfile>
+</configuration>
