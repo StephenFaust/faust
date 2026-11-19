@@ -17,6 +17,7 @@
 
 - [核心概念](#核心概念)
 - [功能特性](#功能特性)
+- [界面预览](#界面预览)
 - [系统架构](#系统架构)
 - [技术栈](#技术栈)
 - [仓库结构](#仓库结构)
@@ -59,6 +60,7 @@
 
 **控制台能力**
 
+- 统一的资源页范式：筛选条（关键词 / 状态 / 类型）+ 卡片网格，卡片直出状态、类型标签与常用操作
 - 智能体工作台：列表 / 详情 / 发布 / 下线 / 删除 / 版本管理，与对话入口合并
 - 技能管理：技能本体 + 条目编辑，支持拖拽导入目录（自动识别 frontmatter 与附属文件）
 - 工具管理：四类工具的配置与连接参数、发布状态
@@ -66,6 +68,61 @@
 - 空间管理：个人 / 团队空间切换、成员管理、解散与退出
 - 流式对话：打字机平滑输出、思考过程折叠、工具调用过程展示、Markdown 渲染（CJK 友好）、文件上传
 - 视觉系统 Aurora Obsidian：深色优先、明暗可切，极光光斑 / 网格 / 聚光跟随等材质层均为 GPU 合成
+
+## 界面预览
+
+控制台采用深色优先的 **Aurora Obsidian** 主题，侧边栏左下角可切换明暗（下列截图为浅色主题）。
+左侧是空间切换与快捷入口，右侧资源页统一为「筛选条 + 卡片网格」，卡片上直接暴露状态、类型与常用操作。
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="assets/screenshots/01-agents.png" alt="智能体工作台" width="100%" />
+      <br />
+      <sub><b>智能体</b> · 版本 / 类型 / 发布状态 / 标签与调用量一览，右下角可直接进入对话</sub>
+    </td>
+    <td width="50%" valign="top">
+      <img src="assets/screenshots/02-skills.png" alt="技能管理" width="100%" />
+      <br />
+      <sub><b>技能</b> · 技能独立于 Agent 维护，显示条目（文档）数量与关联标签，发布后可被多个 Agent 复用</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="assets/screenshots/03-tools.png" alt="工具管理" width="100%" />
+      <br />
+      <sub><b>工具</b> · NATIVE / HTTP / DB / SUB_AGENT 四类工具统一管理，支持按状态与类型筛选</sub>
+    </td>
+    <td width="50%" valign="top">
+      <img src="assets/screenshots/04-datasources.png" alt="数据源管理" width="100%" />
+      <br />
+      <sub><b>数据源</b> · JDBC 连接配置与连接测试，连接串与账号脱敏展示</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="assets/screenshots/05-spaces.png" alt="空间管理" width="100%" />
+      <br />
+      <sub><b>空间</b> · 个人空间与团队空间分栏展示，卡片统计空间内的 Agent / 工具 / 技能 / 数据源数量</sub>
+    </td>
+    <td width="50%" valign="top">
+      <img src="assets/screenshots/06-chat.png" alt="流式对话" width="100%" />
+      <br />
+      <sub><b>对话</b> · 思考过程可折叠，工具调用入参与返回结果逐条展开，正文按 Markdown 渲染</sub>
+    </td>
+  </tr>
+</table>
+
+对应的路由与职责：
+
+| 页面 | 路由 | 职责 |
+| --- | --- | --- |
+| 智能体 | `/` | 工作台与 Agent 管理合并页：列表、创建、编辑、发布/下线、进入对话 |
+| 技能 | `/skills` | 技能本体与条目（文档 / 脚本 / 引用）的独立维护 |
+| 工具 | `/tools` | 四类工具的配置、发布状态、与数据源/子智能体的关联 |
+| 数据源 | `/datasource` | 数据库连接配置、连接测试 |
+| 空间 | `/spaces` | 个人/团队空间的创建、改名、成员管理、解散 |
+| 对话 | `/chat/:agentCode` | 流式对话、思考过程折叠、工具调用轨迹 |
 
 ## 系统架构
 
