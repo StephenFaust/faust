@@ -1,10 +1,11 @@
 import * as React from 'react';
-import { ArrowDown, ArrowLeft, ArrowUp, Info, Loader2, Lock, Plus, Save, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowUp, FolderOpen, Info, Loader2, Lock, Plus, Save, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Field, FieldGroup } from '@/components/ui/field';
 import { Select } from '@/components/ui/select';
+import { useConfirm } from '@/components/ui/confirm';
 import { PageHeader } from '@/components/layout/page-header';
 import { Skeleton } from '@/components/ui/controls';
 import { EmptyState } from '@/components/empty-state';
@@ -12,6 +13,14 @@ import { createSkill, fetchSkillDetail, updateSkill, type SkillDetail } from '@/
 import { useAsyncData } from '@/lib/hooks/use-paged-list';
 import { SKILL_ITEM_TYPES, SKILL_ITEM_TYPE, SKILL_STATUS } from '@/lib/constants';
 import { SKILL_FILE_NAME_CONTENT, SKILL_FILE_NAME_MAX_LEN, skillFileNameError, validators } from '@/lib/format';
+import { cn } from '@/lib/utils';
+import {
+  buildSkillDrafts,
+  describeImportResult,
+  readFilesFromDrop,
+  readFilesFromInput,
+  type RawSkillFile
+} from '@/lib/skill-import';
 import { toast } from 'sonner';
 
 interface ItemState {
@@ -50,6 +59,20 @@ export function SkillFormView({ id, onBack, onSaved }: { id?: number; onBack: ()
   const [populated, setPopulated] = React.useState(!isEdit);
 
   const detail = useAsyncData<SkillDetail>(isEdit ? () => fetchSkillDetail(id as number) : null, [id]);
+
+  const confirm = useConfirm();
+  const [importing, setImporting] = React.useState(false);
+  const [dragging, setDragging] = React.useState(false);
+  const dragDepth = React.useRef(0);
+  const folderInputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    const input = folderInputRef.current;
+    if (!input) return;
+    // React 的 input 属性里没有 webkitdirectory，只能落到原生属性上
+    input.setAttribute('webkitdirectory', '');
+    input.setAttribute('directory', '');
+  }, []);
 
   React.useEffect(() => {
     const data = detail.data;
@@ -135,12 +158,85 @@ export function SkillFormView({ id, onBack, onSaved }: { id?: number; onBack: ()
     });
   };
 
+  /**
+   * 导入 skill 文件夹：读取目录内所有文本文件（含文件名与内容），
+   * 主文档（skill.md / content.md，兜底第一个 Markdown）自动归为 CONTENT 并排在首位。
+   */
+  const applyImport = async (rawFiles: RawSkillFile[]) => {
+    if (!rawFiles.length) {
+      toast.error('没有读取到文件');
+      return;
+    }
+    setImporting(true);
+    try {
+      const result = await buildSkillDrafts(rawFiles);
+      if (!result.files.length) {
+        toast.error('没有可导入的文件（已跳过图片等非文本文件与超过 512KB 的文件）');
+        return;
+      }
+      if (form.items.length) {
+        // 一个文件夹就是一份完整技能，导入按「替换」处理，避免新旧文件混在一起
+        const confirmed = await confirm({
+          title: '替换当前技能文件？',
+          description: `导入会用文件夹里的 ${result.files.length} 个文件替换当前 ${form.items.length} 个文件，已手动编辑的内容将丢失。`,
+          confirmText: '替换',
+          destructive: true
+        });
+        if (!confirmed) return;
+      }
+      setForm((prev) => ({
+        ...prev,
+        items: result.files.map((file) => ({
+          itemType: file.itemType,
+          fileName: file.fileName,
+          content: file.content
+        }))
+      }));
+      setErrors({});
+      toast.success(describeImportResult(result));
+    } catch (error) {
+      toast.error(`导入失败：${error instanceof Error ? error.message : '未知错误'}`);
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const onFolderPicked = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = readFilesFromInput(event.target.files);
+    // 清空 value，保证同一个文件夹可以连续导入两次
+    event.target.value = '';
+    await applyImport(files);
+  };
+
+  const onDrop = async (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    dragDepth.current = 0;
+    setDragging(false);
+    const files = await readFilesFromDrop(event.dataTransfer);
+    await applyImport(files);
+  };
+
+  const onDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    dragDepth.current += 1;
+    setDragging(true);
+  };
+
+  const onDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    dragDepth.current -= 1;
+    if (dragDepth.current <= 0) {
+      dragDepth.current = 0;
+      setDragging(false);
+    }
+  };
+
   const validate = () => {
     const next: Record<string, string> = {};
     if (!form.name.trim()) next.name = '请填写技能名称';
     if (!form.skillCode.trim()) next.skillCode = '请填写技能 Code';
     else if (!validators.skillCode(form.skillCode.trim())) {
-      next.skillCode = 'Code 需以字母开头，只能包含字母、数字和下划线';
+      next.skillCode = 'Code 需以字母开头，只能包含字母、数字、下划线和短横线';
     }
     if (!form.items.length) next.items = '请至少添加一个文件';
     const contentCount = form.items.filter((item) => item.itemType === SKILL_ITEM_TYPE.CONTENT).length;
@@ -270,7 +366,7 @@ export function SkillFormView({ id, onBack, onSaved }: { id?: number; onBack: ()
                 label="Code"
                 required
                 error={errors.skillCode}
-                hint={isEdit ? 'Code 修改后全局唯一性会重新校验' : '字母开头，仅字母 / 数字 / 下划线，全局唯一'}
+                hint={isEdit ? 'Code 修改后全局唯一性会重新校验' : '字母开头，仅字母 / 数字 / 下划线 / 短横线，全局唯一'}
               >
                 <Input
                   value={form.skillCode}
@@ -306,15 +402,37 @@ export function SkillFormView({ id, onBack, onSaved }: { id?: number; onBack: ()
               }
               extra={<span className="text-[11.5px] text-muted-foreground">按顺序注入，可通过上下移动调整</span>}
             >
+              {/* 文件夹选择：webkitdirectory 让浏览器整目录读取，路径走 webkitRelativePath */}
+              <input ref={folderInputRef} type="file" multiple className="hidden" onChange={onFolderPicked} />
+
               {errors.items ? <p className="text-[11.5px] text-rose-600">{errors.items}</p> : null}
               {errors.itemsContent ? <p className="text-[11.5px] text-rose-600">{errors.itemsContent}</p> : null}
 
-              {form.items.length === 0 ? (
-                <p className="rounded-lg bg-muted/40 px-3 py-6 text-center text-[12.5px] text-muted-foreground">
-                  还没有文件。建议至少保留一个 CONTENT 文件作为技能主文档。
-                </p>
-              ) : (
-                <div className="flex flex-col gap-2.5">
+              <div
+                onDragEnter={onDragEnter}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = 'copy';
+                }}
+                onDragLeave={onDragLeave}
+                onDrop={onDrop}
+                className={cn(
+                  'rounded-xl transition-all',
+                  dragging && 'bg-primary/[0.05] ring-2 ring-primary/30 ring-offset-2 ring-offset-card'
+                )}
+              >
+                {form.items.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-border/80 bg-muted/25 px-4 py-7 text-center">
+                    <p className="text-[12.5px] font-medium text-foreground/80">
+                      {dragging ? '松开鼠标即可导入' : '还没有文件'}
+                    </p>
+                    <p className="mt-1 text-[11.5px] leading-relaxed text-muted-foreground">
+                      可点击「导入文件夹」选择本地 skill 目录，或把文件夹直接拖到这里；建议至少保留一个 CONTENT
+                      文件作为技能主文档。
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2.5">
                   {form.items.map((item, index) => {
                     const isContent = item.itemType === SKILL_ITEM_TYPE.CONTENT;
                     const contentTaken = form.items.some(
@@ -406,12 +524,27 @@ export function SkillFormView({ id, onBack, onSaved }: { id?: number; onBack: ()
                     );
                   })}
                 </div>
-              )}
+                )}
+              </div>
 
-              <Button variant="secondary" size="sm" className="self-start" onClick={addItem}>
-                <Plus className="h-3.5 w-3.5" />
-                添加文件
-              </Button>
+              <div className="flex flex-wrap items-center gap-2 self-start">
+                <Button variant="secondary" size="sm" onClick={addItem}>
+                  <Plus className="h-3.5 w-3.5" />
+                  添加文件
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={importing}
+                  onClick={() => folderInputRef.current?.click()}
+                >
+                  {importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FolderOpen className="h-3.5 w-3.5" />}
+                  {importing ? '导入中…' : '导入文件夹'}
+                </Button>
+                <span className="text-[11.5px] text-muted-foreground">
+                  skill.md / content.md 识别为主文档，子目录文件命名为 目录__文件名
+                </span>
+              </div>
             </FieldGroup>
           </div>
 

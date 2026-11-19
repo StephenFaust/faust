@@ -9,9 +9,10 @@ export function normalizeTags(tags: unknown): string[] {
 }
 
 export const validators = {
-  code: (value: string) => /^[A-Za-z][A-Za-z_]*$/.test(value),
-  /** 对齐后端 SkillCreateReq 的 skillCode 正则：字母开头，仅字母/数字/下划线 */
-  skillCode: (value: string) => /^[A-Za-z][A-Za-z0-9_]*$/.test(value),
+  /** 对齐后端 AgentCreateReq / ToolCreateReq 的 code 正则：字母开头，仅字母/下划线/短横线 */
+  code: (value: string) => /^[A-Za-z][A-Za-z_-]*$/.test(value),
+  /** 对齐后端 SkillCreateReq 的 skillCode 正则：字母开头，仅字母/数字/下划线/短横线 */
+  skillCode: (value: string) => /^[A-Za-z][A-Za-z0-9_-]*$/.test(value),
   version: (value: string) => /^\d+\.\d+\.\d+$/.test(value)
 };
 

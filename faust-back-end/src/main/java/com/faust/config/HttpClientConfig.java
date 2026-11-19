@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import java.net.http.HttpClient;
 import java.time.Duration;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 public class HttpClientConfig {
 
 	@Bean

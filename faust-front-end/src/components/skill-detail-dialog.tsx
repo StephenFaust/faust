@@ -13,7 +13,7 @@ import { Skeleton } from '@/components/ui/controls';
 import { EmptyState } from '@/components/empty-state';
 import { Descriptions } from '@/components/descriptions';
 import { StatusBadge } from '@/components/status-badge';
-import { Markdown } from '@/components/markdown';
+import { SkillMarkdown } from '@/components/skill-markdown';
 import { Disclosure, ExpandHint } from '@/components/disclosure';
 import { fetchSkillDetail, type SkillDetail, type SkillItem } from '@/services/agent-center';
 import { useAsyncData } from '@/lib/hooks/use-paged-list';
@@ -57,7 +57,7 @@ function SkillItemBlock({ item, index }: { item: SkillItem; index: number }) {
         </pre>
       ) : (
         <div className="agent-md-view max-h-[640px] overflow-auto">
-          <Markdown content={item.content || ''} />
+          <SkillMarkdown content={item.content || ''} />
         </div>
       )}
     </Disclosure>

@@ -7,7 +7,7 @@ import { Descriptions } from '@/components/descriptions';
 import { StatusBadge } from '@/components/status-badge';
 import { Skeleton } from '@/components/ui/controls';
 import { EmptyState } from '@/components/empty-state';
-import { Markdown } from '@/components/markdown';
+import { SkillMarkdown } from '@/components/skill-markdown';
 import { Disclosure, ExpandHint } from '@/components/disclosure';
 import { fetchSkillDetail, type SkillDetail } from '@/services/agent-center';
 import { useAsyncData } from '@/lib/hooks/use-paged-list';
@@ -121,7 +121,7 @@ export function SkillDetailView({ id, onBack }: { id: number; onBack: () => void
                       </pre>
                     ) : (
                       <div className="agent-md-view">
-                        <Markdown content={item.content || ''} />
+                        <SkillMarkdown content={item.content || ''} />
                       </div>
                     )}
                   </Disclosure>

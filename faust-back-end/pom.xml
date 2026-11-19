@@ -32,8 +32,6 @@
         <aws-sdk.version>2.44.12</aws-sdk.version>
         <aws-url-connection-client.version>2.53.1</aws-url-connection-client.version>
         <poi.version>5.4.1</poi.version>
-        <graalpy.version>24.2.1</graalpy.version>
-        <bouncycastle.version>1.78.1</bouncycastle.version>
         <guava.version>33.6.0-jre</guava.version>
         <hutool.version>5.8.47</hutool.version>
         <fastjson.version>1.2.83</fastjson.version>
@@ -72,6 +70,11 @@
                 <version>${spring-ai-alibaba.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.alibaba.cloud.ai</groupId>
+                <artifactId>spring-ai-alibaba-sandbox</artifactId>
+                <version>${spring-ai-alibaba.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.redisson</groupId>
                 <artifactId>redisson-spring-boot-starter</artifactId>
                 <version>${redisson.version}</version>
@@ -106,27 +109,7 @@
                 <artifactId>poi-ooxml</artifactId>
                 <version>${poi.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.graalvm.polyglot</groupId>
-                <artifactId>polyglot</artifactId>
-                <version>${graalpy.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.graalvm.polyglot</groupId>
-                <artifactId>python-community</artifactId>
-                <version>${graalpy.version}</version>
-                <type>pom</type>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk18on</artifactId>
-                <version>${bouncycastle.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk18on</artifactId>
-                <version>${bouncycastle.version}</version>
-            </dependency>
+
             <dependency>
                 <groupId>com.alibaba</groupId>
                 <artifactId>fastjson</artifactId>
@@ -209,6 +192,11 @@
             <artifactId>spring-ai-alibaba-agent-framework</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.alibaba.cloud.ai</groupId>
+            <artifactId>spring-ai-alibaba-sandbox</artifactId>
+        </dependency>
+
         <!-- 对象存储（兼容 S3 协议：MinIO / OSS / COS） -->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
@@ -227,27 +215,6 @@
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
-        </dependency>
-
-        <!-- 进程内 Python 沙箱（代码执行工具） -->
-        <dependency>
-            <groupId>org.graalvm.polyglot</groupId>
-            <artifactId>polyglot</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.graalvm.polyglot</groupId>
-            <artifactId>python-community</artifactId>
-            <type>pom</type>
-            <scope>runtime</scope>
-        </dependency>
-        <!-- GraalPy 的 hashlib / ssl 模块依赖 BouncyCastle -->
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk18on</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk18on</artifactId>
         </dependency>
 
         <!-- 工具库 -->

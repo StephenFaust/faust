@@ -12,8 +12,8 @@ import java.util.List;
 public class ToolCreateReq {
 
 	@NotBlank(message = "toolCode")
-	@Pattern(regexp = "^[A-Za-z][A-Za-z_]*$", message = "toolCode 只能由字母（大小写均可）和下划线组成，且不能以 _ 开头")
-	@Schema(description = "tool 编码", example = "mysql_tool")
+	@Pattern(regexp = "^[A-Za-z][A-Za-z_-]*$", message = "toolCode 只能由字母（大小写均可）、下划线和短横线组成，且不能以 _ 或 - 开头")
+	@Schema(description = "tool 编码", example = "mysql-tool")
 	private String toolCode;
 
 	@NotBlank(message = "name不能为空")

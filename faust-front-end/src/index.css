@@ -65,6 +65,12 @@
     --brand-2: 258 72% 54%;
     --brand-3: 178 58% 36%;
 
+    /* 文本选中态：实色品牌底 + 反白字。
+       早期用 primary/20 的半透明叠色，在输入框里会糊成一块灰紫方块、文字发灰，
+       所以这里单独抽一组 token，深浅主题各给一个能保证对比度的实色。 */
+    --selection: 244 80% 48%;
+    --selection-foreground: 0 0% 100%;
+
     --radius: 14px;
 
     /* 动效曲线 */
@@ -126,6 +132,10 @@
     --brand-1: 0 0% 100%;
     --brand-2: 244 100% 86%;
     --brand-3: 178 82% 78%;
+
+    /* 选中态：与浅色主题保持同一套观感（深靛底 + 反白字），在深色面板上依然跳得出来 */
+    --selection: 244 82% 52%;
+    --selection-foreground: 0 0% 100%;
   }
 
   * {
@@ -152,12 +162,23 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* 文本选中：实色底 + 反白字，替代原来低透明度的叠色（输入框里会糊成灰块） */
   ::selection {
-    background: hsl(var(--primary) / 0.2);
-    color: hsl(var(--foreground));
+    background-color: hsl(var(--selection));
+    color: hsl(var(--selection-foreground));
+    /* WebKit 下 input / textarea 内的选中文字不跟随 color，必须显式覆盖 */
+    -webkit-text-fill-color: hsl(var(--selection-foreground));
   }
 
   :focus-visible {
+    outline: none;
+  }
+
+  /* 表单控件在鼠标聚焦（非 :focus-visible）时也不要有 outline：
+     新版 Chrome 的默认焦点圈带一层淡色外发光，输入框里很扎眼 */
+  input:focus,
+  textarea:focus,
+  select:focus {
     outline: none;
   }
 

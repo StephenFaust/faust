@@ -13,8 +13,8 @@ import java.util.List;
 public class SkillCreateReq {
 
 	@NotBlank(message = "skillCode不能为空")
-	@Pattern(regexp = "^[A-Za-z][A-Za-z0-9_]*$", message = "skillCode 只能由字母、数字和下划线组成，且不能以数字或 _ 开头")
-	@Schema(description = "技能编码，全局唯一", example = "log_troubleshoot")
+	@Pattern(regexp = "^[A-Za-z][A-Za-z0-9_-]*$", message = "skillCode 只能由字母、数字、下划线和短横线组成，且不能以数字、_ 或 - 开头")
+	@Schema(description = "技能编码，全局唯一", example = "log-troubleshoot")
 	private String skillCode;
 
 	@NotBlank(message = "name不能为空")

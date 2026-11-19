@@ -13,8 +13,8 @@ import java.util.List;
 public class AgentCreateReq {
 
 	@NotBlank(message = "agentCode不能为空")
-	@Pattern(regexp = "^[A-Za-z][A-Za-z_]*$", message = "agentCode 只能由字母（大小写均可）和下划线组成，且不能以 _ 开头")
-	@Schema(description = "Agent 编码，同一 Agent 各版本共享", example = "my_agent")
+	@Pattern(regexp = "^[A-Za-z][A-Za-z_-]*$", message = "agentCode 只能由字母（大小写均可）、下划线和短横线组成，且不能以 _ 或 - 开头")
+	@Schema(description = "Agent 编码，同一 Agent 各版本共享", example = "my-agent")
 	private String agentCode;
 
 	@NotBlank(message = "name不能为空")

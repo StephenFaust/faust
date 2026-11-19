@@ -125,7 +125,7 @@ export function ToolFormView({
     const next: Partial<Record<keyof FormState | 'schema', string>> = {};
     if (!form.name.trim()) next.name = '请填写工具名称';
     if (!form.code.trim()) next.code = '请填写工具 Code';
-    else if (!validators.code(form.code.trim())) next.code = 'Code 只能由字母和下划线组成，且不能以 _ 开头';
+    else if (!validators.code(form.code.trim())) next.code = 'Code 只能由字母、下划线和短横线组成，且不能以 _ 或 - 开头';
     if (!form.version.trim()) next.version = '请填写版本号';
     else if (!validators.version(form.version.trim())) next.version = '版本号格式应为 x.y.z';
     if (!form.tags.length) next.tags = '请选择标签';
@@ -240,7 +240,7 @@ export function ToolFormView({
                   placeholder="工具名称"
                 />
               </Field>
-              <Field label="Code" required error={errors.code} hint={isEdit ? 'Code 创建后不可修改' : '仅字母与下划线'}>
+              <Field label="Code" required error={errors.code} hint={isEdit ? 'Code 创建后不可修改' : '字母开头，仅字母、下划线、短横线'}>
                 <Input
                   value={form.code}
                   disabled={isEdit}

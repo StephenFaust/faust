@@ -8,21 +8,24 @@ import com.alibaba.cloud.ai.graph.agent.hook.skills.SkillsAgentHook;
 import com.alibaba.cloud.ai.graph.agent.hook.summarization.SummarizationHook;
 import com.alibaba.cloud.ai.graph.agent.interceptor.Interceptor;
 import com.alibaba.cloud.ai.graph.skills.registry.SkillRegistry;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.faust.agent.checkpoint.saver.NewRedisSaver;
+import com.alibaba.cloud.ai.sandbox.ToolkitInit;
 import com.faust.agent.cache.AgentCacheGeneration;
-import com.faust.entity.*;
-import com.faust.repository.*;
-import com.faust.common.function.ThrowExceptionFunction;
+import com.faust.agent.checkpoint.saver.NewRedisSaver;
 import com.faust.agent.hooks.MessageSaveAndHandleHook;
+import com.faust.agent.skills.registry.DefaultSkillRegistry;
+import com.faust.common.function.ThrowExceptionFunction;
+import com.faust.common.security.PasswordEncryptor;
 import com.faust.dto.agent.*;
+import com.faust.entity.*;
 import com.faust.enums.ErrorMessageEnum;
 import com.faust.enums.ToolTypeEnum;
 import com.faust.exception.AgentBusinessException;
-import com.faust.common.security.PasswordEncryptor;
-import com.faust.agent.skills.registry.DefaultSkillRegistry;
+import com.faust.repository.*;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import io.agentscope.runtime.sandbox.box.BaseSandbox;
+import io.agentscope.runtime.sandbox.manager.SandboxService;
 import io.micrometer.observation.ObservationRegistry;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -79,6 +82,7 @@ public class AgentFactory implements ApplicationContextAware, DisposableBean {
 	private final AgentSkillRelRepository agentSkillRelService;
 	private final ToolCallingManager toolCallingManager;
 	private final RetryTemplate retryTemplate;
+	private final SandboxService sandboxService;
 	private final ObjectProvider<ObservationRegistry> observationRegistry;
 	private final ObjectProvider<ChatModelObservationConvention> observationConvention;
 	private final ObjectProvider<ToolExecutionEligibilityPredicate> openAiToolExecutionEligibilityPredicate;
@@ -125,17 +129,17 @@ public class AgentFactory implements ApplicationContextAware, DisposableBean {
 
 
 	private static final String MD_ATTENTION = """
-		## 注意
-
-		### 1.输出的时候必须校验md的格式，一定不能出现错误的md格式
-		""";
+			## 注意
+			
+			### 1.输出的时候必须校验md的格式，一定不能出现错误的md格式
+			""";
 
 
 	@PostConstruct
 	public void init() {
 		this.agentParallelExecutor = new ThreadPoolExecutor(THREAD_COUNT,
-			THREAD_COUNT, 0L, TimeUnit.MILLISECONDS, new
-			LinkedBlockingQueue<>(5000), r -> {
+				THREAD_COUNT, 0L, TimeUnit.MILLISECONDS, new
+				LinkedBlockingQueue<>(5000), r -> {
 			Thread thread = new Thread(r);
 			thread.setDaemon(true);
 			thread.setName("agent-parallel-executor-" + thread.getId());
@@ -144,30 +148,30 @@ public class AgentFactory implements ApplicationContextAware, DisposableBean {
 	}
 
 	private final LoadingCache<String, ReactAgent> cache = CacheBuilder.newBuilder()
-		.expireAfterAccess(Duration.ofMinutes(CACHE_EXPIRE_MINUTES))
-		.maximumSize(CACHE_MAX_SIZE)
-		.build(new CacheLoader<>() {
-			@NotNull
-			@Override
-			public ReactAgent load(@NotNull String key) {
-				String[] split = key.split(KEY_SEPARATOR);
-				String agentCode = split[0];
-				String version = split[1];
-				boolean subAgent = split.length > 3;
-				AgentInfo agentInfo = agentInfoService.getPublishedAgentByCodeAndVersion(agentCode, version);
-				ThrowExceptionFunction.isNull(agentInfo)
-					.throwMessage(ErrorMessageEnum.AGENT_NOT_FOUND);
-				if (subAgent) {
-					agentInfo.setIsSubAgent(true);
+			.expireAfterAccess(Duration.ofMinutes(CACHE_EXPIRE_MINUTES))
+			.maximumSize(CACHE_MAX_SIZE)
+			.build(new CacheLoader<>() {
+				@NotNull
+				@Override
+				public ReactAgent load(@NotNull String key) {
+					String[] split = key.split(KEY_SEPARATOR);
+					String agentCode = split[0];
+					String version = split[1];
+					boolean subAgent = split.length > 3;
+					AgentInfo agentInfo = agentInfoService.getPublishedAgentByCodeAndVersion(agentCode, version);
+					ThrowExceptionFunction.isNull(agentInfo)
+							.throwMessage(ErrorMessageEnum.AGENT_NOT_FOUND);
+					if (subAgent) {
+						agentInfo.setIsSubAgent(true);
+					}
+					// 构建前先记下依赖：父 Agent 会把子 Agent 实例内嵌进工具回调，
+					// 子 Agent 失效时必须连带父 Agent 一起失效
+					Set<String> subAgentCodes = subAgentCodesOf(agentInfo.getId());
+					ReactAgent agent = buildAgent(agentInfo);
+					rememberDependencies(key, subAgentCodes);
+					return agent;
 				}
-				// 构建前先记下依赖：父 Agent 会把子 Agent 实例内嵌进工具回调，
-				// 子 Agent 失效时必须连带父 Agent 一起失效
-				Set<String> subAgentCodes = subAgentCodesOf(agentInfo.getId());
-				ReactAgent agent = buildAgent(agentInfo);
-				rememberDependencies(key, subAgentCodes);
-				return agent;
-			}
-		});
+			});
 
 
 	public ReactAgent getAgent(String agentCode, String version) {
@@ -237,17 +241,17 @@ public class AgentFactory implements ApplicationContextAware, DisposableBean {
 				return Set.of();
 			}
 			List<Long> subAgentIds = agentToolService.listByIds(toolIds).stream()
-				.filter(tool -> ToolTypeEnum.SUB_AGENT.name().equals(tool.getType()))
-				.map(AgentTool::getSubAgentId)
-				.filter(Objects::nonNull)
-				.toList();
+					.filter(tool -> ToolTypeEnum.SUB_AGENT.name().equals(tool.getType()))
+					.map(AgentTool::getSubAgentId)
+					.filter(Objects::nonNull)
+					.toList();
 			if (subAgentIds.isEmpty()) {
 				return Set.of();
 			}
 			return agentInfoService.listByIds(subAgentIds).stream()
-				.map(AgentInfo::getAgentCode)
-				.filter(Objects::nonNull)
-				.collect(Collectors.toSet());
+					.map(AgentInfo::getAgentCode)
+					.filter(Objects::nonNull)
+					.collect(Collectors.toSet());
 		} catch (Exception e) {
 			LOGGER.warn("Collect sub agent dependency failed, agentId={}", agentId, e);
 			return Set.of();
@@ -259,8 +263,8 @@ public class AgentFactory implements ApplicationContextAware, DisposableBean {
 			return;
 		}
 		subAgentCodes.forEach(code -> subAgentDependencies
-			.computeIfAbsent(code, key -> ConcurrentHashMap.newKeySet())
-			.add(parentKey));
+				.computeIfAbsent(code, key -> ConcurrentHashMap.newKeySet())
+				.add(parentKey));
 	}
 
 	/**
@@ -274,51 +278,51 @@ public class AgentFactory implements ApplicationContextAware, DisposableBean {
 
 	private AgentMateInfo getAgentMateInfo(AgentInfo agentInfo) {
 		AgentMateInfo.AgentMateInfoBuilder builder = AgentMateInfo.builder()
-			.agentCode(agentInfo.getAgentCode())
-			.name(agentInfo.getName())
-			.description(agentInfo.getDescription());
+				.agentCode(agentInfo.getAgentCode())
+				.name(agentInfo.getName())
+				.description(agentInfo.getDescription());
 		// 获取系统提示词
 		Long agentId = agentInfo.getId();
 		AgentSystemPrompt systemPrompt = agentSystemPromptService.getSystemPrompt(agentId);
 		ThrowExceptionFunction.isNull(systemPrompt)
-			.throwMessage(ErrorMessageEnum.PROMPT_NOT_FOUND);
+				.throwMessage(ErrorMessageEnum.PROMPT_NOT_FOUND);
 		builder.systemPrompt(systemPrompt.getContent());
 		// 获取模型配置信息
 		AgentModelConfig modeConfig = agentModelConfigService.getConfigByAgentId(agentId);
 		ThrowExceptionFunction.isNull(modeConfig)
-			.throwMessage(ErrorMessageEnum.MODEL_CONFIG_NOT_FOUND);
+				.throwMessage(ErrorMessageEnum.MODEL_CONFIG_NOT_FOUND);
 		AgentModelMateInfo agentModelMateInfo = AgentModelMateInfo.builder()
-			.modelName(modeConfig.getModelName())
-			.baseUrl(modeConfig.getBaseUrl())
-			.apiKey(modeConfig.getApiKey())
-			.timeout(modeConfig.getTimeout())
-			.topP(modeConfig.getTopP())
-			.temperature(modeConfig.getTemperature()).build();
+				.modelName(modeConfig.getModelName())
+				.baseUrl(modeConfig.getBaseUrl())
+				.apiKey(modeConfig.getApiKey())
+				.timeout(modeConfig.getTimeout())
+				.topP(modeConfig.getTopP())
+				.temperature(modeConfig.getTemperature()).build();
 		builder.agentModelMateInfo(agentModelMateInfo);
 		// 获取skill元信息（通过 agent_skill_rel 关联，仅取已发布技能）
 		List<Long> skillIds = agentSkillRelService.listSkillIdsByAgentId(agentId);
 		if (!CollectionUtils.isEmpty(skillIds)) {
 			List<AgentSkill> agentSkills = agentSkillService.listPublishedByIds(skillIds);
 			ThrowExceptionFunction.isEmpty(agentSkills)
-				.throwMessage(ErrorMessageEnum.SKILL_NOT_FOUND);
+					.throwMessage(ErrorMessageEnum.SKILL_NOT_FOUND);
 			List<AgentSkillItem> agentSkillItems = agentSkillItemService.listBySkillIdList(skillIds);
 			ThrowExceptionFunction.isEmpty(agentSkillItems)
-				.throwMessage(ErrorMessageEnum.SKILL_NOT_FOUND);
+					.throwMessage(ErrorMessageEnum.SKILL_NOT_FOUND);
 			Map<Long, List<AgentSkillItem>> skillItemMap = agentSkillItems
-				.stream().collect(Collectors.groupingBy(AgentSkillItem::getSkillId));
+					.stream().collect(Collectors.groupingBy(AgentSkillItem::getSkillId));
 			List<SkillMateInfo> skillMateInfoList = agentSkills.stream().map(e -> {
 				SkillMateInfo skillMateInfo = SkillMateInfo.builder()
-					.skillCode(e.getSkillCode())
-					.name(e.getName())
-					.description(e.getDescription()).build();
+						.skillCode(e.getSkillCode())
+						.name(e.getName())
+						.description(e.getDescription()).build();
 				Optional.ofNullable(skillItemMap.get(e.getId()))
-					.ifPresent(items -> skillMateInfo.setSkillItemMateInfoList(items.stream()
-						.map(item ->
-							SkillItemMateInfo.builder()
-								.itemType(item.getItemType())
-								.fileName(item.getFileName())
-								.sortOrder(item.getSortOrder())
-								.content(item.getContent()).build()).toList()));
+						.ifPresent(items -> skillMateInfo.setSkillItemMateInfoList(items.stream()
+								.map(item ->
+										SkillItemMateInfo.builder()
+												.itemType(item.getItemType())
+												.fileName(item.getFileName())
+												.sortOrder(item.getSortOrder())
+												.content(item.getContent()).build()).toList()));
 				return skillMateInfo;
 			}).toList();
 			builder.skillMateInfoList(skillMateInfoList);
@@ -328,7 +332,7 @@ public class AgentFactory implements ApplicationContextAware, DisposableBean {
 		if (!CollectionUtils.isEmpty(toolIdList)) {
 			List<AgentTool> agentTools = agentToolService.publishedToolList(toolIdList);
 			ThrowExceptionFunction.isEmpty(agentTools)
-				.throwMessage(ErrorMessageEnum.TOOL_NOT_FOUND);
+					.throwMessage(ErrorMessageEnum.TOOL_NOT_FOUND);
 			List<Long> dbConfigIds = new ArrayList<>();
 			List<Long> subAgentIds = new ArrayList<>();
 			for (AgentTool agentTool : agentTools) {
@@ -342,29 +346,29 @@ public class AgentFactory implements ApplicationContextAware, DisposableBean {
 			Map<Long, SubAgentInfo> subAgentInfoMap = new HashMap<>(0);
 			if (!CollectionUtils.isEmpty(dbConfigIds)) {
 				dbConfigInfoMap = dataSourceConfigDaoService.listByIds(dbConfigIds).stream()
-					.collect(Collectors.toMap(DataSourceConfig::getId, e -> DataSourceInfo.builder()
-						.url(e.getUrl())
-						.pwd(passwordEncryptor.decrypt(e.getPwd()))
-						.dbType(e.getDbType())
-						.user(e.getUser()).build()));
+						.collect(Collectors.toMap(DataSourceConfig::getId, e -> DataSourceInfo.builder()
+								.url(e.getUrl())
+								.pwd(passwordEncryptor.decrypt(e.getPwd()))
+								.dbType(e.getDbType())
+								.user(e.getUser()).build()));
 			}
 			if (!CollectionUtils.isEmpty(subAgentIds)) {
 				subAgentInfoMap = agentInfoService.listByIds(subAgentIds).stream()
-					.collect(Collectors.toMap(AgentInfo::getId, e -> SubAgentInfo.builder()
-						.agentId(e.getId())
-						.agentCode(e.getAgentCode())
-						.version(e.getVersion())
-						.build()));
+						.collect(Collectors.toMap(AgentInfo::getId, e -> SubAgentInfo.builder()
+								.agentId(e.getId())
+								.agentCode(e.getAgentCode())
+								.version(e.getVersion())
+								.build()));
 			}
 			List<ToolMateInfo> toolMateInfoList = Lists.newArrayList();
 			for (AgentTool tool : agentTools) {
 				ToolMateInfo.ToolMateInfoBuilder toolMateInfoBuilder = ToolMateInfo.builder()
-					.name(tool.getName())
-					.toolCode(tool.getToolCode())
-					.type(tool.getType())
-					.beanName(tool.getBeanName())
-					.version(tool.getPublishVersion())
-					.description(tool.getDescription());
+						.name(tool.getName())
+						.toolCode(tool.getToolCode())
+						.type(tool.getType())
+						.beanName(tool.getBeanName())
+						.version(tool.getPublishVersion())
+						.description(tool.getDescription());
 				if (Objects.equals(ToolTypeEnum.DB.name(), tool.getType())) {
 					toolMateInfoBuilder.dataSourceInfo(dbConfigInfoMap.get(tool.getDataSourceConfigId()));
 				} else if (Objects.equals(ToolTypeEnum.SUB_AGENT.name(), tool.getType())) {
@@ -382,10 +386,10 @@ public class AgentFactory implements ApplicationContextAware, DisposableBean {
 	private OpenAiApi getOpenAiApi(AgentModelMateInfo agentModelMateInfo) {
 		ResolvedConnectionProperties resolved = resolveConnectionProperties(agentModelMateInfo);
 		return OpenAiApi.builder().baseUrl(resolved.baseUrl()).apiKey(new SimpleApiKey(resolved.apiKey())).headers(resolved.headers())
-			.completionsPath(COMPLETIONS_PATH).embeddingsPath("/v1/embeddings")
-			.restClientBuilder(restClientBuilderProvider.getIfAvailable(RestClient::builder))
-			.webClientBuilder(webClientBuilderProvider.getIfAvailable(WebClient::builder))
-			.responseErrorHandler(responseErrorHandler).build();
+				.completionsPath(COMPLETIONS_PATH).embeddingsPath("/v1/embeddings")
+				.restClientBuilder(restClientBuilderProvider.getIfAvailable(RestClient::builder))
+				.webClientBuilder(webClientBuilderProvider.getIfAvailable(WebClient::builder))
+				.responseErrorHandler(responseErrorHandler).build();
 	}
 
 
@@ -424,12 +428,12 @@ public class AgentFactory implements ApplicationContextAware, DisposableBean {
 		chatOptions.setTopP(agentModelMateInfo.getTopP());
 		chatOptions.setTemperature(agentModelMateInfo.getTemperature());
 		OpenAiChatModel chatModel = OpenAiChatModel.builder().openAiApi(getOpenAiApi(agentModelMateInfo))
-			.defaultOptions(chatOptions)
-			.toolCallingManager(toolCallingManager)
-			.toolExecutionEligibilityPredicate(openAiToolExecutionEligibilityPredicate
-				.getIfUnique(DefaultToolExecutionEligibilityPredicate::new))
-			.retryTemplate(retryTemplate)
-			.observationRegistry(observationRegistry.getIfUnique(() -> ObservationRegistry.NOOP)).build();
+				.defaultOptions(chatOptions)
+				.toolCallingManager(toolCallingManager)
+				.toolExecutionEligibilityPredicate(openAiToolExecutionEligibilityPredicate
+						.getIfUnique(DefaultToolExecutionEligibilityPredicate::new))
+				.retryTemplate(retryTemplate)
+				.observationRegistry(observationRegistry.getIfUnique(() -> ObservationRegistry.NOOP)).build();
 		Objects.requireNonNull(chatModel);
 		observationConvention.ifAvailable(chatModel::setObservationConvention);
 		return chatModel;
@@ -440,7 +444,7 @@ public class AgentFactory implements ApplicationContextAware, DisposableBean {
 		List<Hook> hooks = new ArrayList<>();
 		// 用于生成摘要的模型，可以是主模型或更经济的模型
 		SummarizationHook summarizationHook = SummarizationHook.builder()
-			.model(chatModel).build();
+				.model(chatModel).build();
 		hooks.add(summarizationHook);
 		MessageSaveAndHandleHook saveAndHandleHook = applicationContext.getBean(MessageSaveAndHandleHook.class);
 		hooks.add(saveAndHandleHook);
@@ -462,21 +466,20 @@ public class AgentFactory implements ApplicationContextAware, DisposableBean {
 		AgentMateInfo agentMateInfo = getAgentMateInfo(agentInfo);
 		// 创建 agent
 		OpenAiChatModel openAiChatModel = getOpenAiChatModel(agentMateInfo.getAgentModelMateInfo());
-
 		Builder builder = ReactAgent.builder()
-			.name(agentInfo.getName())
-			.model(openAiChatModel)
-			.systemPrompt(getSystemPrompt(agentMateInfo))
-			.hooks(getHooks(agentMateInfo, openAiChatModel))
-			.interceptors(getInterceptors())
-			.executor(agentParallelExecutor)
-			.parallelToolExecution(true);
+				.name(agentInfo.getName())
+				.model(openAiChatModel)
+				.systemPrompt(getSystemPrompt(agentMateInfo))
+				.hooks(getHooks(agentMateInfo, openAiChatModel))
+				.interceptors(getInterceptors())
+				.executor(agentParallelExecutor)
+				.parallelToolExecution(true);
 		if (!Boolean.TRUE.equals(agentInfo.getIsSubAgent())) {
 			builder.saver(redisSaver);
 		}
 		if (!CollectionUtils.isEmpty(agentMateInfo.getToolMateInfoList())) {
 			Map<Boolean, List<ToolMateInfo>> toolInfoMap = agentMateInfo.getToolMateInfoList()
-				.stream().collect(Collectors.groupingBy(e -> ToolTypeEnum.NATIVE.name().equals(e.getType())));
+					.stream().collect(Collectors.groupingBy(e -> ToolTypeEnum.NATIVE.name().equals(e.getType())));
 			List<ToolMateInfo> nativeToolInfos = toolInfoMap.get(Boolean.TRUE);
 			List<ToolMateInfo> toolInfos = toolInfoMap.get(Boolean.FALSE);
 			if (!CollectionUtils.isEmpty(nativeToolInfos)) {
@@ -492,7 +495,7 @@ public class AgentFactory implements ApplicationContextAware, DisposableBean {
 
 	private String getSystemPrompt(AgentMateInfo agentMateInfo) {
 		return agentMateInfo.getSystemPrompt() + "\n\n" +
-			MD_ATTENTION;
+				MD_ATTENTION;
 	}
 
 
@@ -506,7 +509,7 @@ public class AgentFactory implements ApplicationContextAware, DisposableBean {
 			@Override
 			public ToolCallback[] getToolCallbacks() {
 				return toolMateInfos.stream()
-					.map(toolCallbackFactory::getToolCallback).toArray(ToolCallback[]::new);
+						.map(toolCallbackFactory::getToolCallback).toArray(ToolCallback[]::new);
 			}
 		};
 	}
@@ -528,11 +531,11 @@ public class AgentFactory implements ApplicationContextAware, DisposableBean {
 
 	private Hook getSkillsHook(List<SkillMateInfo> skillMateInfos) {
 		SkillRegistry registry = DefaultSkillRegistry.builder()
-			.agentSkillsService(skillMateInfos)
-			.build();
+				.agentSkillsService(skillMateInfos)
+				.build();
 		return SkillsAgentHook.builder()
-			.skillRegistry(registry)
-			.build();
+				.skillRegistry(registry)
+				.build();
 
 	}
 

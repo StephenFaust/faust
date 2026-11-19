@@ -20,6 +20,9 @@ import org.springframework.ai.tool.execution.ToolCallResultConverter;
 import org.springframework.stereotype.Component;
 
 import java.net.http.HttpClient;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Component

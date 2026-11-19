@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.concurrent.TimeUnit;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 public class CheckPointSaverConfig {
 
 

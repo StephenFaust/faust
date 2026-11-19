@@ -1102,7 +1102,7 @@ export default function ChatPage() {
               disabled={isBusy}
             />
 
-            <div className="mt-1.5 flex items-end gap-2 rounded-2xl border border-input bg-card/70 px-2.5 py-2 shadow-panel transition-all duration-200 ease-expo focus-within:border-primary/60 focus-within:ring-4 focus-within:ring-primary/10">
+            <div className="mt-1.5 flex items-end gap-2 rounded-2xl border border-input bg-card/70 px-2.5 py-2 shadow-panel transition-colors duration-200 ease-expo focus-within:transition-none focus-within:border-primary/70">
               <textarea
                 ref={inputRef}
                 rows={1}

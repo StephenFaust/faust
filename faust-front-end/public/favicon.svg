@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Faust Agent Center">
+  <defs>
+    <!-- 品牌渐变：与侧边栏 logo 同源（hsl(244 92% 66%) → hsl(272 84% 52%)） -->
+    <linearGradient id="faust-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9C86FF" />
+      <stop offset="0.5" stop-color="#6A52FA" />
+      <stop offset="1" stop-color="#5C14DE" />
+    </linearGradient>
+    <!-- 左上高光 + 中心柔光：玻璃质感，避免死板 -->
+    <radialGradient id="faust-sheen" cx="0.26" cy="0.02" r="0.62">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30" />
+      <stop offset="0.55" stop-color="#FFFFFF" stop-opacity="0.05" />
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <rect width="64" height="64" rx="15" fill="url(#faust-bg)" />
+  <rect width="64" height="64" rx="15" fill="url(#faust-sheen)" />
+
+  <!-- 主体：四角星（与侧边栏 Sparkles 同形） -->
+  <path
+    transform="translate(30 32.2)"
+    fill="#FFFFFF"
+    d="M0 -18.2 C0 -4.6 4.6 0 18.2 0 C4.6 0 0 4.6 0 18.2 C0 4.6 -4.6 0 -18.2 0 C-4.6 0 0 -4.6 0 -18.2 Z"
+  />
+
+  <!-- 点缀：右上小星，拉开节奏 -->
+  <path
+    transform="translate(46.4 17.6)"
+    fill="#FFFFFF"
+    fill-opacity="0.9"
+    d="M0 -6.2 C0 -1.9 1.9 0 6.2 0 C1.9 0 0 1.9 0 6.2 C0 1.9 -1.9 0 -6.2 0 C-1.9 0 0 -1.9 0 -6.2 Z"
+  />
+
+  <!-- 内描边：深色 / 浅色标签栏上都有清晰边界 -->
+  <rect x="0.6" y="0.6" width="62.8" height="62.8" rx="14.4" fill="none" stroke="#FFFFFF" stroke-opacity="0.24" stroke-width="1.2" />
+</svg>
